@@ -10,12 +10,16 @@ var jsup = module.exports = function (src) {
     };
     
     self.stringify = self.toString = function () {
-        return (function traverse (node) {
+        return (function walk (node) {
+console.dir(node);
             if (Array.isArray(node)) {
+                return node.node.start.line;
             }
             else if (typeof node === 'object') {
+                return node.node.start.line;
             }
             else {
+                return node.node.start.line;
             }
         })(ann);
     };
@@ -35,6 +39,7 @@ jsup.annotate = function (src, obj) {
     
     var path = [];
     var prevPathLen = 0;
+    var rootNode = null;
     
     burrito('[\n' + src + '\n][0]', function (node) {
         var p = node.parent();
@@ -57,7 +62,8 @@ jsup.annotate = function (src, obj) {
             key = this.key;
         }
         else if (p.name === 'sub' && node.value[0] !== 0) {
-            return; // the root
+            rootNode = node;
+            return;
         }
         else return;
         
@@ -77,5 +83,5 @@ jsup.annotate = function (src, obj) {
         }
     });
     
-    return root[root.length - 1];
+    return { node : rootNode, value : root[root.length - 1] };
 };
