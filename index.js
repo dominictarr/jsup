@@ -6,6 +6,18 @@ var jsup = module.exports = function (src) {
     var obj = JSON.parse(src);
     var ann = jsup.annotate(src, obj);
     
+    var lines = src.split('\n');
+    function extract (node) {
+        var s = lines.slice(node.start.line - 1, node.end.line).join('\n')
+            .slice(node.start.col)
+        ;
+            
+        if (node.end.col) {
+            return s.slice(0, node.end.col - lines[node.end.line - 1].length + 1)
+        }
+        else return s;
+    }
+    
     self.set = function (key, value) {
     };
     
@@ -15,28 +27,41 @@ var jsup = module.exports = function (src) {
         (function walk (cursor) {
             var start = cursor.node.start;
             var end = cursor.node.end;
+            console.log(extract(cursor.node));
             
-            if (!rows[start.line]) rows[start.line] = [];
-            if (!rows[end.line]) rows[end.line] = [];
+            function setRow (coords, s) {
+                if (!rows[coords.line]) rows[coords.line] = [];
+                rows[coords.line][coords.col] = s;
+            }
             
             if (Array.isArray(cursor.value)) {
-                rows[start.line][start.col] = '[';
+                setRow(start, '[');
                 cursor.value.forEach(walk);
-                rows[end.line][end.col] = ']';
+                setRow(end, ']');
             }
             else if (typeof cursor.value === 'object') {
-                rows[start.line][start.col] = '{';
-                Object.keys(cursor.value).forEach(function (key) {
+                setRow(start, '{');
+                
+                Object.keys(cursor.value).forEach(function (key, i) {
+                    
+                    var x = cursor.value[key].node;
+                    setRow(x.start, JSON.stringify(key));
+                    
                     walk(cursor.value[key]);
                 });
-                rows[end.line][end.col] = '}';
+                setRow(end, '}');
             }
             else {
-                rows[start.line][start.col] = JSON.stringify(cursor.value);
+                setRow(start, JSON.stringify(cursor.value));
             }
         })(ann);
         
-        return rows;
+        return rows.map(function (row) {
+            return row.map(function (c) {
+                if (typeof c === 'string') return c;
+                else return ' ';
+            }).join('');
+        }).join('\n');
     };
     
     self.inspect = function () {
