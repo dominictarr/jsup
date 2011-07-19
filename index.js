@@ -5,7 +5,7 @@ module.exports = function (src) {
     var obj = JSON.parse(src);
     
     var cursor = [ obj ];
-    var root = [ Object.create(Object.getPrototypeOf(obj)) ];
+    var root = [ Array.isArray(obj) ? [] : {} ];
     
     var path = [];
     var prevPathLen = 0;
@@ -19,6 +19,7 @@ module.exports = function (src) {
         if (this.path.length <= prevPathLen) {
             path.pop();
             cursor.shift();
+            root.shift();
             prevPathLen = path.length;
         }
         
@@ -39,11 +40,21 @@ module.exports = function (src) {
         if (node.name === 'object' || node.name === 'array') {
             prevPathLen = this.path.length;
             path.push(key);
-console.log(key);
-console.dir(cursor[0]);
+            
+            root[0][key] = {
+                node : node.name,
+                value : node.name === 'array' ? [] : {}
+            };
+            root.unshift(root[0][key].value);
             cursor.unshift(cursor[0][key]);
         }
+        else {
+            root[0][key] = { node : node.name, value : cursor[0][key] };
+        }
     });
+    
+    root = root[root.length - 1];
+    console.log(JSON.stringify(root, null, 2));
     
     self.set = function (key, value) {
     };
