@@ -1,8 +1,34 @@
 var burrito = require('burrito');
 
-module.exports = function (src) {
+var jsup = module.exports = function (src) {
     var self = {};
+    
     var obj = JSON.parse(src);
+    var ann = jsup.annotate(src, obj);
+    
+    self.set = function (key, value) {
+    };
+    
+    self.stringify = self.toString = function () {
+        return (function traverse (node) {
+            if (Array.isArray(node)) {
+            }
+            else if (typeof node === 'object') {
+            }
+            else {
+            }
+        })(ann);
+    };
+    
+    self.inspect = function () {
+        return JSON.stringify(obj);
+    };
+    
+    return self;
+};
+
+jsup.annotate = function (src, obj) {
+    if (!obj) obj = JSON.parse(src);
     
     var cursor = [ obj ];
     var root = [ Array.isArray(obj) ? [] : {} ];
@@ -35,36 +61,21 @@ module.exports = function (src) {
         }
         else return;
         
-        //console.log(path.concat(key).join('/'));
-        
         if (node.name === 'object' || node.name === 'array') {
             prevPathLen = this.path.length;
             path.push(key);
             
             root[0][key] = {
-                node : node.name,
+                node : node,
                 value : node.name === 'array' ? [] : {}
             };
             root.unshift(root[0][key].value);
             cursor.unshift(cursor[0][key]);
         }
         else {
-            root[0][key] = { node : node.name, value : cursor[0][key] };
+            root[0][key] = { node : node, value : cursor[0][key] };
         }
     });
     
-    root = root[root.length - 1];
-    console.log(JSON.stringify(root, null, 2));
-    
-    self.set = function (key, value) {
-    };
-    
-    self.toString = self.stringify = function () {
-    };
-    
-    self.inspect = function () {
-        return 'lul'
-    };
-    
-    return self;
+    return root[root.length - 1];
 };
