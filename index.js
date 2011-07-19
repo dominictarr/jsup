@@ -10,18 +10,33 @@ var jsup = module.exports = function (src) {
     };
     
     self.stringify = self.toString = function () {
-        return (function walk (node) {
-console.dir(node);
-            if (Array.isArray(node)) {
-                return node.node.start.line;
+        var rows = [];
+        
+        (function walk (cursor) {
+            var start = cursor.node.start;
+            var end = cursor.node.end;
+            
+            if (!rows[start.line]) rows[start.line] = [];
+            if (!rows[end.line]) rows[end.line] = [];
+            
+            if (Array.isArray(cursor.value)) {
+                rows[start.line][start.col] = '[';
+                cursor.value.forEach(walk);
+                rows[end.line][end.col] = ']';
             }
-            else if (typeof node === 'object') {
-                return node.node.start.line;
+            else if (typeof cursor.value === 'object') {
+                rows[start.line][start.col] = '{';
+                Object.keys(cursor.value).forEach(function (key) {
+                    walk(cursor.value[key]);
+                });
+                rows[end.line][end.col] = '}';
             }
             else {
-                return node.node.start.line;
+                rows[start.line][start.col] = JSON.stringify(cursor.value);
             }
         })(ann);
+        
+        return rows;
     };
     
     self.inspect = function () {
