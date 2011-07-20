@@ -8,23 +8,34 @@ var jsup = module.exports = function (src) {
     var ann = jsup.annotate(src, obj);
     
     self.set = function (path, value) {
-        var cur = ann;
-        var curs = [ cur ];
         traverse(obj).set(path, value);
         
-        var ps = [];
-        for (var i = 0; i < path.length - 1; i++) {
-            var key = path[i];
-            if (!Object.hasOwnProperty.call(cur.value, key)) break;
-            ps.push(key);
-            cur = cur.value[key];
-            curs.unshift(cur);
-        }
-        var res = traverse(obj).get(ps);
+        var key = path.pop();
+        var cur = path.reduce(function (cur, k) {
+            return cur.value[k];
+        }, ann);
+        var res = traverse(obj).get(path);
         
-        var before = src.slice(0, cur.node.start.pos - 2);
-        var after = src.slice(cur.node.end.pos - 1);
-        src = before + JSON.stringify(res) + after;
+        var start = cur.node.start.pos - 2;
+        var end = cur.node.end.pos - 1;
+        
+        if (cur.node.name === 'array') {
+            if (cur.node.value[0][key]) {
+                var c = cur.node.value[0][key][0];
+                start = c.start.pos - 2;
+                end = c.end.pos - 1;
+            }
+            else throw new Error('node does not exist')
+            
+            var before = src.slice(0, start);
+            var after = src.slice(end);
+            src = before + JSON.stringify(value) + after;
+        }
+        else {
+            var before = src.slice(0, start);
+            var after = src.slice(end);
+            src = before + JSON.stringify(res) + after;
+        }
         
 console.log('before=<' + before + '>');
 console.log('after=<' + after + '>');
