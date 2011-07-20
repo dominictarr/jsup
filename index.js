@@ -22,8 +22,6 @@ var jsup = module.exports = function (src) {
         }
         var res = traverse(obj).get(ps);
         
-        var start = Object.keys(curs[1]);
-        
         var before = src.slice(0, cur.node.start.pos - 2);
         var after = src.slice(cur.node.end.pos - 1);
         src = before + JSON.stringify(res) + after;
@@ -51,25 +49,18 @@ console.log('src=<' + src + '>');
 jsup.annotate = function (src, obj) {
     if (!obj) obj = JSON.parse(src);
     
-    var cursor = [ obj ];
-    var root = [ Array.isArray(obj) ? [] : {} ];
-    
-    var path = [];
-    var prevPathLen = 0;
-    var rootNode = null;
+    var cur = obj;
+    var root = { value : Array.isArray(obj) ? [] : {} };
     
     burrito('[\n' + src + '\n][0]', function (node) {
         var p = node.parent();
-        var key = undefined;
         
-        if (!p) return
-        
-        if (this.path.length <= prevPathLen) {
-            path.pop();
-            cursor.shift();
-            root.shift();
-            prevPathLen = path.length;
+        if (p && p.name === 'sub' && node.value[0] !== 0) {
+            root.node = node;
         }
+        if (node.start.pos < 2 || node.end.pos >= src.length - 5) return;
+        
+        var key = undefined;
         
         if (p.name === 'object') {
             var ix = this.path[ this.path.length - 2 ];
@@ -78,27 +69,33 @@ jsup.annotate = function (src, obj) {
         else if (p.name === 'array') {
             key = this.key;
         }
-        else if (p.name === 'sub' && node.value[0] !== 0) {
-            rootNode = node;
-            return;
-        }
-        else return;
+        else throw new Error('unexpected name')
         
         if (node.name === 'object' || node.name === 'array') {
-            prevPathLen = this.path.length;
-            path.push(key);
-            
-            root[0][key] = {
+            root.value[key] = {
                 node : node,
                 value : node.name === 'array' ? [] : {}
             };
-            root.unshift(root[0][key].value);
-            cursor.unshift(cursor[0][key]);
+            
+            var root_ = root;
+            root = root.value[key];
+            
+            var cur_ = cur;
+            cur = cur[key];
+            
+            this.after(function () {
+                root = root_;
+                cur = cur_;
+            });
         }
         else {
-            root[0][key] = { node : node, value : cursor[0][key] };
+            root.value[key] = {
+                node : node,
+                value : cur[key]
+            };
         }
     });
     
-    return { node : rootNode, value : root[root.length - 1] };
+    console.dir(root.value);
+    return root;
 };
