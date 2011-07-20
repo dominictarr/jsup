@@ -1,4 +1,5 @@
 var burrito = require('burrito');
+var traverse = require('traverse');
 
 var jsup = module.exports = function (src) {
     var self = {};
@@ -6,66 +7,42 @@ var jsup = module.exports = function (src) {
     var obj = JSON.parse(src);
     var ann = jsup.annotate(src, obj);
     
-    var lines = src.split('\n');
-    function extract (node) {
-        var s = lines.slice(node.start.line - 1, node.end.line).join('\n')
-            .slice(node.start.col)
-        ;
-            
-        if (node.end.col) {
-            return s.slice(0, node.end.col - lines[node.end.line - 1].length + 1)
+    self.set = function (path, value) {
+        var cur = ann;
+        var curs = [ cur ];
+        traverse(obj).set(path, value);
+        
+        var ps = [];
+        for (var i = 0; i < path.length - 1; i++) {
+            var key = path[i];
+            if (!Object.hasOwnProperty.call(cur.value, key)) break;
+            ps.push(key);
+            cur = cur.value[key];
+            curs.unshift(cur);
         }
-        else return s;
-    }
-    
-    self.set = function (key, value) {
+        var res = traverse(obj).get(ps);
+        
+        var start = Object.keys(curs[1]);
+        
+        var before = src.slice(0, cur.node.start.pos - 2);
+        var after = src.slice(cur.node.end.pos - 1);
+        src = before + JSON.stringify(res) + after;
+        
+console.log('before=<' + before + '>');
+console.log('after=<' + after + '>');
+console.log('src=<' + src + '>');
+        
+        ann = jsup.annotate(src, obj);
+        
+        return self;
     };
     
     self.stringify = self.toString = function () {
-        var rows = [];
-        
-        (function walk (cursor) {
-            var start = cursor.node.start;
-            var end = cursor.node.end;
-            console.log(extract(cursor.node));
-            
-            function setRow (coords, s) {
-                if (!rows[coords.line]) rows[coords.line] = [];
-                rows[coords.line][coords.col] = s;
-            }
-            
-            if (Array.isArray(cursor.value)) {
-                setRow(start, '[');
-                cursor.value.forEach(walk);
-                setRow(end, ']');
-            }
-            else if (typeof cursor.value === 'object') {
-                setRow(start, '{');
-                
-                Object.keys(cursor.value).forEach(function (key, i) {
-                    
-                    var x = cursor.value[key].node;
-                    setRow(x.start, JSON.stringify(key));
-                    
-                    walk(cursor.value[key]);
-                });
-                setRow(end, '}');
-            }
-            else {
-                setRow(start, JSON.stringify(cursor.value));
-            }
-        })(ann);
-        
-        return rows.map(function (row) {
-            return row.map(function (c) {
-                if (typeof c === 'string') return c;
-                else return ' ';
-            }).join('');
-        }).join('\n');
+        return src;
     };
     
     self.inspect = function () {
-        return JSON.stringify(obj);
+        return 'jsup(\'' + JSON.stringify(obj) + '\')';
     };
     
     return self;
