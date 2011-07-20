@@ -75,3 +75,10 @@ j.stringify()
 -------------
 
 Return the new string source with modifications, preserving indentation.
+
+install
+=======
+
+With [npm](http://npmjs.org) just do:
+
+    npm install jsup
