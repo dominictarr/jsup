@@ -7,6 +7,10 @@ var jsup = module.exports = function (src) {
     var obj = JSON.parse(src);
     var ann = jsup.annotate(src, obj);
     
+    self.get = function (path) {
+        return traverse(obj).get(path || []);
+    }
+    
     self.set = function (path, value) {
         traverse(obj).set(path, value);
         
