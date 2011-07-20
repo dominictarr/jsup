@@ -16,30 +16,40 @@ var jsup = module.exports = function (src) {
         }, ann);
         var res = traverse(obj).get(path);
         
-        var start = cur.node.start.pos - 2;
-        var end = cur.node.end.pos - 1;
-        
         if (cur.node.name === 'array') {
-            if (cur.node.value[0][key]) {
-                var c = cur.node.value[0][key][0];
-                start = c.start.pos - 2;
-                end = c.end.pos - 1;
+            if (!cur.node.value[0][key]) {
+                throw new Error('array node does not exist')
             }
-            else throw new Error('node does not exist')
             
-            var before = src.slice(0, start);
-            var after = src.slice(end);
-            src = before + JSON.stringify(value) + after;
+            var c = cur.node.value[0][key];
+        }
+        else if (cur.node.name === 'object') {
+            var xs = cur.node.value[0];
+            var c = null;
+            
+            for (var i = 0; i < xs.length; i++) {
+                if (xs[i][0] === key) {
+                    c = xs[i][1];
+                    break;
+                }
+            }
+            
+            if (!c) throw new Error('object node does not exist');
+        }
+        else throw new Error('unexpected node type: ' + cur.node.name)
+        
+        var start = c[0].start.pos - 2;
+        
+        if (c[0].start.pos === c[0].end.pos) {
+            var end = start + c[1].toString().length;
         }
         else {
-            var before = src.slice(0, start);
-            var after = src.slice(end);
-            src = before + JSON.stringify(res) + after;
+            var end = c[0].end.pos - 1;
         }
         
-console.log('before=<' + before + '>');
-console.log('after=<' + after + '>');
-console.log('src=<' + src + '>');
+        var before = src.slice(0, start);
+        var after = src.slice(end);
+        src = before + JSON.stringify(value) + after;
         
         ann = jsup.annotate(src, obj);
         
