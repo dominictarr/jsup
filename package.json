@@ -1,0 +1,40 @@
+{
+    "name" : "jsup",
+    "version" : "0.0.0",
+    "description" : "modify json files in-place, preserving formatting",
+    "main" : "index.js",
+    "directories" : {
+        "lib" : ".",
+        "example" : "example",
+        "test" : "test"
+    },
+    "dependencies" : {
+        "burrito" : ">=0.2.5 <0.3",
+        "traverse" : ">=0.4.3 <0.5"
+    },
+    "devDependencies" : {
+        "expresso" : "0.7.x"
+    },
+    "scripts" : {
+        "test" : "expresso"
+    },
+    "repository" : {
+        "type" : "git",
+        "url" : "http://github.com/substack/jsup.git"
+    },
+    "keywords" : [
+        "json",
+        "update",
+        "in-place",
+        "preserve",
+        "whitespace",
+        "format"
+    ],
+    "author" : {
+        "name" : "James Halliday",
+        "email" : "mail@substack.net",
+        "url" : "http://substack.net"
+    },
+    "license" : "MIT/X11",
+    "engine" : { "node" : ">=0.4" }
+}
