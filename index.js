@@ -58,7 +58,7 @@ jsup.annotate = function (src, obj) {
         if (p && p.name === 'sub' && node.value[0] !== 0) {
             root.node = node;
         }
-        if (node.start.pos < 2 || node.end.pos >= src.length - 5) return;
+        if (node.start.pos < 2 || node.end.pos > src.length - 5) return;
         
         var key = undefined;
         
@@ -96,6 +96,5 @@ jsup.annotate = function (src, obj) {
         }
     });
     
-    console.dir(root.value);
     return root;
 };
